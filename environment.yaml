@@ -1,0 +1,13 @@
+name: hsnn_env
+dependencies:
+  - python=3.11.7
+  - conda-forge::brian2=2.5.4
+  - conda-forge::mpi4py
+  - ipykernel
+  - setuptools==68.2.2
+  - packaging==23.1
+  - psutil==5.9.0
+  - pip
+  - pip:
+    - -r requirements-lock.txt
+    - -e .

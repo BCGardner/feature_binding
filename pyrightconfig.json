@@ -1,0 +1,7 @@
+{
+    "ignore": [
+        "**/*.ipynb*",
+    ],
+    "reportIncompatibleMethodOverride": "warning",
+    "reportIncompatibleVariableOverride": "warning",
+}

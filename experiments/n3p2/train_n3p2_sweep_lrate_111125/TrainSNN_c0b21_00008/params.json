@@ -1,0 +1,227 @@
+{
+  "encoder": {
+    "kernel_size": 6,
+    "min_value": 0.1,
+    "orientations": [
+      0,
+      0.785,
+      1.571,
+      2.356
+    ],
+    "phase_offsets": [
+      -1.571,
+      1.571
+    ],
+    "renormalise": true,
+    "scale_factor": 6,
+    "wavelengths": [
+      0.8
+    ]
+  },
+  "namespaces": {
+    "neurons": {
+      "EXC": {
+        "C_m": 0.5,
+        "V_0": -74,
+        "V_a": -90,
+        "V_e": 0,
+        "V_h": -57,
+        "V_i": -70,
+        "V_thr": -53,
+        "eta_a": 6,
+        "g_l": 25,
+        "tau_a": 80,
+        "tau_e": 2,
+        "tau_i": 5,
+        "tau_r": 2
+      },
+      "INH": {
+        "C_m": 0.214,
+        "V_0": -82,
+        "V_e": 0,
+        "V_h": -58,
+        "V_i": -70,
+        "V_thr": -53,
+        "g_l": 18,
+        "tau_e": 2,
+        "tau_i": 5,
+        "tau_r": 2
+      }
+    },
+    "synapses": {
+      "FIXED": {
+        "delay_max": 0.1,
+        "w_max": 1
+      },
+      "PLASTIC": {
+        "alpha_C": 0.5,
+        "alpha_D": 0.5,
+        "delay_max": 10,
+        "mu": 0,
+        "tau_C": 5,
+        "tau_D": 5,
+        "w_max": 1
+      }
+    }
+  },
+  "network": {
+    "dt": 0.1,
+    "encoder": "gabor",
+    "integ_method": "rk4",
+    "num_hidden": 3,
+    "seed_val": null,
+    "stimulus": "poisson"
+  },
+  "projections": {
+    "E2E": {
+      "connect_kwargs": {
+        "fan_in": 2,
+        "p_conn": 0.8
+      },
+      "namespace": {
+        "eta": 20
+      }
+    },
+    "E2I": {
+      "attrs_init": {
+        "delay": "delay_max",
+        "w": "w_max"
+      },
+      "connect_kwargs": {
+        "fan_in": 2,
+        "p_conn": 0.8
+      },
+      "namespace": {
+        "eta": 30
+      }
+    },
+    "FB": {
+      "connect_kwargs": {
+        "fan_in": 8,
+        "p_conn": 0.05
+      },
+      "namespace": {
+        "eta": 20
+      }
+    },
+    "FF": {
+      "connect_kwargs": {
+        "fan_in": [
+          2,
+          8,
+          12,
+          16
+        ],
+        "p_conn": [
+          0.48,
+          0.51,
+          0.23,
+          0.13
+        ]
+      },
+      "namespace": {
+        "eta": 30
+      }
+    },
+    "I2E": {
+      "attrs_init": {
+        "delay": "delay_max",
+        "w": "w_max"
+      },
+      "connect_kwargs": {
+        "fan_in": 4,
+        "p_conn": 0.6
+      },
+      "namespace": {
+        "eta": 20
+      }
+    }
+  },
+  "simulation": {
+    "duration": 100,
+    "duration_relax": 0
+  },
+  "topology": {
+    "poisson": {
+      "EXC": [
+        8,
+        128,
+        128
+      ]
+    },
+    "spatial": {
+      "EXC": [
+        64,
+        64
+      ],
+      "INH": [
+        32,
+        32
+      ]
+    }
+  },
+  "training": {
+    "data": {
+      "name": "n3p2",
+      "transforms": {
+        "resize": [
+          [
+            128,
+            128
+          ]
+        ]
+      }
+    },
+    "lrate": 0.02,
+    "num_epochs_iter": 10,
+    "shuffle": false,
+    "training_iteration": 6
+  },
+  "tuning": {
+    "criterion": {
+      "args": [
+        4,
+        100,
+        250,
+        0,
+        50,
+        null,
+        1,
+        10
+      ],
+      "name": "specificmeasure"
+    },
+    "expt_name": "train_n3p2_sweep_lrate_111125",
+    "hyper_params": {
+      "training.lrate": {
+        "args": [
+          [
+            0.02,
+            0.03,
+            0.05,
+            0.06
+          ]
+        ],
+        "search": "grid"
+      }
+    },
+    "num_samples": 3,
+    "scalars": [
+      {
+        "args": [],
+        "name": "deltaweight"
+      },
+      {
+        "args": [
+          99,
+          4,
+          [
+            5,
+            7
+          ]
+        ],
+        "name": "ratespercentile"
+      }
+    ]
+  }
+}

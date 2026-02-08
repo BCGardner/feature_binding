@@ -1,0 +1,93 @@
+network:  # Isbister et al. 2018
+  num_hidden: 1
+  seed_val: 42
+  dt: 0.1
+  integ_method: rk4
+  encoder: gabor
+  stimulus: poisson
+  neuron_model: coba
+  connector: patch
+  plasticity: stdp
+
+encoder:  # Evans thesis, pp.126-129
+  phase_offsets: [-1.571,  1.571]
+  orientations: [0, 0.785, 1.571, 2.356]
+  wavelengths: [1.6]
+  kernel_size: 11
+  renormalise: True
+  scale_factor: 1000
+  min_value: 1
+
+topology:  # Isbister et al. 2018
+  poisson:
+    EXC: [8, 32, 32]
+  spatial:
+    EXC: [16, 16]
+    INH: [8, 8]
+
+projections:  # Isbister et al. 2018
+  FF:
+    connect_kwargs:
+      fan_in: 2
+      p_conn: 0.5
+  E2I:
+    connect_kwargs:
+      fan_in: 4
+      p_conn: 0.8
+    attrs_init:
+      w: w_max
+      delay: delay_max
+  I2E:
+    connect_kwargs:
+      fan_in: 8
+      p_conn: 0.2
+    attrs_init:
+      w: w_max
+      delay: delay_max
+  FB:
+    connect_kwargs:
+      fan_in: 8
+      p_conn: 0.05
+  E2E:
+    connect_kwargs:
+      fan_in: 4
+      p_conn: 0.2
+
+namespaces:  # Evans thesis, p.101
+  neurons:
+    EXC:
+      C_m: 0.5
+      V_0: -74
+      V_e: 0
+      V_h: -57
+      V_i: -70
+      V_thr: -53
+      g_l: 25
+      tau_e: 2
+      tau_i: 5
+      tau_r: 2
+    INH:
+      C_m: 0.214
+      V_0: -82
+      V_e: 0
+      V_h: -58
+      V_i: -70
+      V_thr: -53
+      g_l: 18
+      tau_e: 2
+      tau_i: 5
+      tau_r: 2
+  synapses:
+    PLASTIC:
+      alpha_C: 0.5
+      alpha_D: 0.5
+      delay_max: 10
+      tau_C: 5
+      tau_D: 5
+      mu: 0
+      eta: 20
+      w_max: 1
+    FIXED:
+      delay_max: 0.1
+      eta: 20
+      w_max: 1

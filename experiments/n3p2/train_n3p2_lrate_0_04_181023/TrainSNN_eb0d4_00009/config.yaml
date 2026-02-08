@@ -1,0 +1,156 @@
+network:
+  num_hidden: 3
+  seed_val: 1556309424
+  dt: 0.1
+  integ_method: rk4
+  encoder: gabor
+  stimulus: poisson
+encoder:
+  phase_offsets:
+  - -1.571
+  - 1.571
+  orientations:
+  - 0
+  - 0.785
+  - 1.571
+  - 2.356
+  wavelengths:
+  - 0.8
+  kernel_size: 6
+  renormalise: true
+  scale_factor: 6
+  min_value: 0.1
+topology:
+  poisson:
+    EXC:
+    - 8
+    - 128
+    - 128
+  spatial:
+    EXC:
+    - 64
+    - 64
+    INH:
+    - 32
+    - 32
+projections:
+  FF:
+    connect_kwargs:
+      fan_in:
+      - 2
+      - 8
+      - 12
+      - 16
+      p_conn:
+      - 0.48
+      - 0.51
+      - 0.23
+      - 0.13
+    namespace:
+      eta: 30
+  E2I:
+    connect_kwargs:
+      fan_in: 2
+      p_conn: 0.8
+    attrs_init:
+      w: w_max
+      delay: delay_max
+    namespace:
+      eta: 30
+  I2E:
+    connect_kwargs:
+      fan_in: 4
+      p_conn: 0.6
+    attrs_init:
+      w: w_max
+      delay: delay_max
+    namespace:
+      eta: 20
+  FB:
+    connect_kwargs:
+      fan_in: 8
+      p_conn: 0.05
+    namespace:
+      eta: 0
+  E2E:
+    connect_kwargs:
+      fan_in: 2
+      p_conn: 0.8
+    namespace:
+      eta: 20
+namespaces:
+  neurons:
+    EXC:
+      C_m: 0.5
+      V_0: -74
+      V_e: 0
+      V_h: -57
+      V_i: -70
+      V_thr: -53
+      g_l: 25
+      tau_e: 2
+      tau_i: 5
+      tau_r: 2
+      V_a: -90
+      eta_a: 6
+      tau_a: 80
+    INH:
+      C_m: 0.214
+      V_0: -82
+      V_e: 0
+      V_h: -58
+      V_i: -70
+      V_thr: -53
+      g_l: 18
+      tau_e: 2
+      tau_i: 5
+      tau_r: 2
+  synapses:
+    PLASTIC:
+      alpha_C: 0.5
+      alpha_D: 0.5
+      delay_max: 10
+      tau_C: 5
+      tau_D: 5
+      mu: 0
+      w_max: 1
+    FIXED:
+      delay_max: 0.1
+      w_max: 1
+simulation:
+  duration: 100
+  duration_relax: 0
+training:
+  data:
+    name: n3p2
+    transforms:
+      resize:
+      - - 128
+        - 128
+  lrate: 0.04
+  num_epochs_iter: 10
+  training_iteration: 6
+  shuffle: false
+tuning:
+  expt_name: train_n3p2_lrate_0_04_181023
+  num_samples: 8
+  criterion:
+    name: specificmeasure
+    args:
+    - 4
+    - 100
+    - 250
+    - 0
+    - 50
+    - null
+    - 1
+    - 20
+  scalars:
+  - name: deltaweight
+    args: []
+  - name: ratespercentile
+    args:
+    - 99
+    - 4
+    - - 5
+      - 7

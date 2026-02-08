@@ -1,0 +1,41 @@
+as_spike_events:
+  test_input:  # spike trains
+  - 0: [0, 1]
+    1: [2, 3]
+  - 0: [0, 1]
+  expected:  # spike events
+  - [[0, 0, 1, 1], [0, 1, 2, 3]]
+  - [[0, 0], [0, 1]]
+
+as_spike_trains:
+  test_input:  # spike events
+  - [[0, 0, 1, 1], [0, 1, 2, 3]]
+  - [[0, 0], [0, 1]]
+  expected:  # spike trains
+  - 0: [0, 1]
+    1: [2, 3]
+  - 0: [0, 1]
+
+get_rates:
+  test_input:  # spike events, duration, num_nrns
+  - [[[0, 0, 1], [0, 10, 20]], 100, 2]
+  expected:  # rates
+  - [[0, 1], [20, 10]]
+
+get_submask:
+  test_input:  # spike times, duration, t_start
+  - [[5, 10, 15, 20, 25, 30], 10, 10]
+  expected:  # mask
+  - [false, true, true, false, false, false]
+
+mask_recording:
+  test_input:  # recording, duration, t_start
+  - [[[0, 0, 1, 1, 2], [5, 10, 15, 20, 25]], 15, 10]
+  expected:  # mask
+  - [[0, 1, 1], [10, 15, 20]]
+
+mask_rates:
+  test_input:  # recording, duration, t_start
+  - [[[0, 0, 1, 1, 2], [5, 10, 15, 20, 25]], 20, 10]
+  expected:  # mask
+  - [[0, 1, 2], [50, 100, 50]]

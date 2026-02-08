@@ -1,0 +1,89 @@
+configfile: "config/workflow/snakemake_config.yaml"
+
+import os
+from pathlib import Path
+
+from hsnn.utils import io, handler
+
+
+# Get common script parameters
+expt_dir = config.get('expt_dir')
+if expt_dir is None:
+    raise ValueError(f"The config parameter 'expt_dir' must be provided")
+expt_dir = str(Path(expt_dir).resolve())
+experiment = handler.ExperimentHandler(expt_dir)
+
+trial = config.get('trial')
+if trial is None:
+    raise ValueError(f"The config parameter 'trial' must be provided")
+trial_view = experiment[trial]
+
+chkpt = config['chkpt']
+subdir = config['subdir']
+delay_jitter = config['delay_jitter']
+layers = config.get('layers', None)
+noise = config['noise']
+verbose = config['verbose']
+
+# Get target output filepaths: inference, detection, significance
+recordings_path = str(handler.get_results_path(trial_view, chkpt, subdir=subdir,
+                                               delay_jitter=delay_jitter, noise=noise))
+hfb_path = handler.get_hfb_path(trial_view, chkpt, subdir=subdir,
+                                delay_jitter=delay_jitter, noise=noise)
+hfb_sgnf_path = handler.get_hfb_path(trial_view, chkpt, subdir=subdir, sgnf=True,
+                                     delay_jitter=delay_jitter, noise=noise)
+
+# Construct positional and optional arguments
+args = f"{expt_dir} {trial} --delay_jitter {delay_jitter} --noise {noise}"
+if chkpt is not None:
+    args += f" --chkpt {chkpt}"
+if subdir is not None:
+    args += f" --subdir {subdir}"
+if verbose:
+    args += " -v"
+if config['no_action']:
+    args += " -n"
+
+# Construct script specific optional arguments
+inference_args = ''.join([f' --{k} {v}' for k, v in config['inference'].items()])
+detection_args = ''.join([f' --{k} {v}' for k, v in config['detection'].items()])
+if layers is not None:
+    detection_args += f" --layers"
+    for layer in layers:
+        detection_args += f" {layer}"
+
+# Debugging
+if verbose:
+    print(f"Run script(s) with common args: '{args}'")
+    print(f"Inference args: '{inference_args}'")
+    print(f"Detection args: '{detection_args}'")
+
+
+rule all:
+    input:
+        hfb_sgnf_path
+
+
+rule inference:
+    output:
+        recordings_path
+    shell:
+        "python scripts/analysis/inference.py " + args + inference_args
+
+
+rule detection:
+    input:
+        recordings_path
+    output:
+        hfb_path
+    shell:
+        "python scripts/analysis/detection.py " + args + detection_args
+
+
+rule significance:
+    input:
+        hfb_path
+    output:
+        hfb_sgnf_path
+    shell:
+        "python scripts/analysis/significance.py " + args + detection_args

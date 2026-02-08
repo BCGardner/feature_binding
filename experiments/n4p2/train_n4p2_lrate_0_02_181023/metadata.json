@@ -1,0 +1,48 @@
+{
+    "FF": {
+        "inference": [
+            "TrainSNN_1fdbf_00000",
+            "TrainSNN_1fdbf_00004",
+            "TrainSNN_1fdbf_00012"
+        ],
+        "noise": [
+            "TrainSNN_1fdbf_00000",
+            "TrainSNN_1fdbf_00004",
+            "TrainSNN_1fdbf_00012"
+        ]
+    },
+    "SEMI": {
+        "inference": [
+            "TrainSNN_1fdbf_00001",
+            "TrainSNN_1fdbf_00005",
+            "TrainSNN_1fdbf_00029"
+        ],
+        "detection": [
+            "TrainSNN_1fdbf_00001",
+            "TrainSNN_1fdbf_00005",
+            "TrainSNN_1fdbf_00029"
+        ],
+        "noise": [
+            "TrainSNN_1fdbf_00001",
+            "TrainSNN_1fdbf_00005",
+            "TrainSNN_1fdbf_00029"
+        ]
+    },
+    "ALL": {
+        "inference": [
+            "TrainSNN_1fdbf_00003",
+            "TrainSNN_1fdbf_00007",
+            "TrainSNN_1fdbf_00015"
+        ],
+        "detection": [
+            "TrainSNN_1fdbf_00003",
+            "TrainSNN_1fdbf_00007",
+            "TrainSNN_1fdbf_00015"
+        ],
+        "noise": [
+            "TrainSNN_1fdbf_00003",
+            "TrainSNN_1fdbf_00007",
+            "TrainSNN_1fdbf_00015"
+        ]
+    }
+}

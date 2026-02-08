@@ -1,0 +1,12 @@
+{
+    "num_layers": 2,
+    "num_nrns": 4,
+    "num_inputs": 16,
+    "p_active": 0.8,
+    "p_connect": 0.6,
+    "seed": 53,
+    "post_ids": [
+        1
+    ],
+    "random_gradients": false
+}

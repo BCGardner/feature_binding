@@ -1,0 +1,181 @@
+network:  # Isbister et al. 2018
+  num_hidden: 3
+  seed_val: null
+  dt: 0.1
+  integ_method: rk4
+  encoder: gabor
+  stimulus: poisson
+
+encoder:  # Brian (based on Evans thesis, pp.126-129)
+  phase_offsets: [-1.571,  1.571]
+  orientations: [0, 0.785, 1.571, 2.356]
+  wavelengths: [0.8]
+  kernel_size: 6
+  renormalise: True
+  scale_factor: 6
+  min_value: 0.1
+
+topology:  # Isbister et al. 2018
+  poisson:
+    EXC: [8, 128, 128]
+  spatial:
+    EXC: [64, 64]
+    INH: [32, 32]
+
+projections:  # Tight lateral RFs (based on Eguchi et al. 2015)
+  FF:
+    connect_kwargs:
+      fan_in:
+      - 2
+      - 8
+      - 12
+      - 16
+      p_conn:
+      - 0.48
+      - 0.51
+      - 0.23
+      - 0.13
+    namespace:
+      eta: 30
+  E2I:
+    connect_kwargs:
+      fan_in: 2
+      p_conn: 0.8
+    attrs_init:
+      w: w_max
+      delay: delay_max
+    namespace:
+      eta: 30
+  I2E:
+    connect_kwargs:
+      fan_in: 4
+      p_conn: 0.6
+    attrs_init:
+      w: w_max
+      delay: delay_max
+    namespace:
+      eta: 20
+  FB:
+    connect_kwargs:
+      fan_in: 8
+      p_conn: 0.05
+    namespace:
+      eta: 20
+  E2E:
+    connect_kwargs:
+      fan_in: 2
+      p_conn: 0.8
+    namespace:
+      eta: 20
+
+namespaces:  # Evans thesis, p.101 (CT learning) w/ rate-adaptation
+  neurons:
+    EXC:
+      C_m: 0.5
+      V_0: -74
+      V_e: 0
+      V_h: -57
+      V_i: -70
+      V_thr: -53
+      g_l: 25
+      tau_e: 2
+      tau_i: 5
+      tau_r: 2
+      V_a: -90
+      eta_a: 6
+      tau_a: 80
+    INH:
+      C_m: 0.214
+      V_0: -82
+      V_e: 0
+      V_h: -58
+      V_i: -70
+      V_thr: -53
+      g_l: 18
+      tau_e: 2
+      tau_i: 5
+      tau_r: 2
+  synapses:
+    PLASTIC:
+      alpha_C: 0.5
+      alpha_D: 0.5
+      delay_max: 10
+      tau_C: 5
+      tau_D: 5
+      mu: 0
+      # eta: null
+      w_max: 1
+    FIXED:
+      delay_max: 0.1
+      # eta: null
+      w_max: 1
+
+simulation:
+  duration: 100  # Evans thesis, pp.101,112,130
+  duration_relax: 0
+
+training:
+  data:
+    name: n3p2
+    transforms:
+      resize: [[128, 128]]
+  lrate: 0.04
+  num_epochs_iter: 10
+  training_iteration: 6
+  shuffle: False
+  checkpointing:
+    num_to_keep: null
+    checkpoint_frequency: 0
+    checkpoint_at_end: True
+
+tuning:
+  expt_name: train_n3p2_lrate_0_04_181023
+  num_samples: 8
+  # search_alg: bayesopt
+  criterion:
+    name: specificmeasure
+    args: [4, 100, 250, 0, 50, null, 1, 20]
+  # stop:
+  #   criterion:
+  #     name: ratesrange
+  #     args: [1, 0, 400, 150, 0, 50]
+  #   threshold: 1
+  scalars:
+    - name: deltaweight
+      args: []
+    - name: ratespercentile
+      args: [99, 4, [5, 7]]  # n3p2: [5, 7]; n4p2: [0, 3]
+  # scale_factors:
+  #   projections.E2I.namespace.eta: 1.0 * projections.I2E.namespace.eta
+  hyper_params:
+    # training.lrate:
+    #   search: grid
+    #   args: [[0.0, 0.02, 0.04, 0.06]]
+    projections.FB.namespace.eta:
+      search: grid
+      args: [[0, 20]]
+    projections.E2E.namespace.eta:
+      search: grid
+      args: [[0, 20]]
+    # namespaces.neurons.EXC.eta_a:
+    #   search: grid
+    #   args: [[4, 6, 8, 10]]
+    # projections.I2E.namespace.eta:
+    #   search: grid
+    #   args: [[10, 15, 20, 25]]
+
+    # projections.FF.namespace.eta:
+    #   search: uniform
+    #   args: [40, 80]  # [40, 80]
+    # projections.E2I.namespace.eta:
+    #   search: uniform
+    #   args: [10, 30] # [10, 30]
+    # projections.I2E.namespace.eta:
+    #   search: uniform
+    #   args: [10, 30]  # [10, 30]
+    # namespaces.neurons.EXC.eta_a:
+    #   search: uniform
+    #   args: [3, 30]  # [3, 40]
+    # namespaces.synapses.PLASTIC.eta:
+    #   search: uniform
+    #   args: [10, 30]  # [20, 40]

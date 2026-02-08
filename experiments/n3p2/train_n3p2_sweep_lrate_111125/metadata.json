@@ -1,0 +1,32 @@
+{
+    "ALL": {
+        "inference": [
+            "TrainSNN_c0b21_00000",
+            "TrainSNN_c0b21_00001",
+            "TrainSNN_c0b21_00002",
+            "TrainSNN_c0b21_00003",
+            "TrainSNN_c0b21_00004",
+            "TrainSNN_c0b21_00005",
+            "TrainSNN_c0b21_00006",
+            "TrainSNN_c0b21_00007",
+            "TrainSNN_c0b21_00008",
+            "TrainSNN_c0b21_00009",
+            "TrainSNN_c0b21_00010",
+            "TrainSNN_c0b21_00011"
+        ],
+        "detection": [
+            "TrainSNN_c0b21_00000",
+            "TrainSNN_c0b21_00001",
+            "TrainSNN_c0b21_00002",
+            "TrainSNN_c0b21_00003",
+            "TrainSNN_c0b21_00004",
+            "TrainSNN_c0b21_00005",
+            "TrainSNN_c0b21_00006",
+            "TrainSNN_c0b21_00007",
+            "TrainSNN_c0b21_00008",
+            "TrainSNN_c0b21_00009",
+            "TrainSNN_c0b21_00010",
+            "TrainSNN_c0b21_00011"
+        ]
+    }
+}

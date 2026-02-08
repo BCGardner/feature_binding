@@ -1,0 +1,51 @@
+{
+    "FF": {
+        "inference": [
+            "TrainSNN_eb0d4_00000",
+            "TrainSNN_eb0d4_00004",
+            "TrainSNN_eb0d4_00008"
+        ],
+        "noise": [
+            "TrainSNN_eb0d4_00000",
+            "TrainSNN_eb0d4_00004",
+            "TrainSNN_eb0d4_00008"
+        ]
+    },
+    "SEMI": {
+        "inference": [
+            "TrainSNN_eb0d4_00001",
+            "TrainSNN_eb0d4_00005",
+            "TrainSNN_eb0d4_00009"
+        ],
+        "detection": [
+            "TrainSNN_eb0d4_00001",
+            "TrainSNN_eb0d4_00005",
+            "TrainSNN_eb0d4_00009"
+        ],
+        "noise": [
+            "TrainSNN_eb0d4_00001",
+            "TrainSNN_eb0d4_00005",
+            "TrainSNN_eb0d4_00009"
+        ]
+    },
+    "ALL": {
+        "inference": [
+            "TrainSNN_eb0d4_00003",
+            "TrainSNN_eb0d4_00007",
+            "TrainSNN_eb0d4_00031"
+        ],
+        "detection": [
+            "TrainSNN_eb0d4_00003",
+            "TrainSNN_eb0d4_00007",
+            "TrainSNN_eb0d4_00031"
+        ],
+        "noise": [
+            "TrainSNN_eb0d4_00003",
+            "TrainSNN_eb0d4_00007",
+            "TrainSNN_eb0d4_00031"
+        ],
+        "onsets": [
+            "TrainSNN_eb0d4_00031"
+        ]
+    }
+}
