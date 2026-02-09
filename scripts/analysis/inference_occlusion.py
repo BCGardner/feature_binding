@@ -36,7 +36,6 @@ from typing import Sequence
 
 import numpy as np
 import xarray as xr
-from omegaconf import OmegaConf
 
 from hsnn.cluster import tasks
 from hsnn.core.logger import get_logger
@@ -215,18 +214,6 @@ def main(opt: Namespace):
         logger.info(f"Results saved to: '{results_path}'")
     else:
         raise FileNotFoundError(f"Failed to write results: '{results_path}'")
-
-    # Save metadata as YAML for human readability
-    metadata = {
-        "bump_start": opt.bump_start,
-        "bump_width": opt.bump_width,
-        "occlusion_levels": list(opt.occlusion_levels),
-        "duration": opt.duration,
-        "reps": opt.reps,
-    }
-    metadata_path = results_path.parent / "occlusion_metadata.yaml"
-    OmegaConf.save(OmegaConf.create(metadata), metadata_path)
-    logger.info(f"Metadata saved to: '{metadata_path}'")
 
 
 if __name__ == "__main__":
