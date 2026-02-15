@@ -13,7 +13,7 @@ setup(
     description='Hierarchical SNN simulated using brian2',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url="https://gitlab.surrey.ac.uk/bg0013/feature_binding",
+    url="https://github.com/BCGardner/feature_binding",
     package_dir={"": "src"},
     packages=find_packages(where='src'),
     classifiers=[

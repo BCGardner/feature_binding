@@ -15,7 +15,7 @@ Developed on Ubuntu 22.04 LTS.
 
 To install the `hsnn` library:
 1. Clone the repository and navigate to the root directory:
-    - `git clone https://gitlab.surrey.ac.uk/bg0013/feature_binding.git`
+    - `git clone https://github.com/BCGardner/feature_binding.git`
     - `cd feature_binding`
 2. Create a new `conda` environment called `hsnn` and install the required dependencies:
     - `conda env create -f environment.yaml`
