@@ -270,7 +270,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_dir",
         type=Path,
-        default=Path(io.BASE_DIR / "out/figures/robustness"),
+        default=Path(io.BASE_DIR / "out/figures/supplementary/robustness"),
         help="Output directory for results",
     )
     parser.add_argument(
