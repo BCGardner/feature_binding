@@ -13,6 +13,7 @@ from .base import PNG
 __all__ = [
     "get_spike_trains",
     "get_polygrp_trains",
+    "concat_spike_trains",
     "gather_recordings",
     "get_closest_indices"
 ]
@@ -70,6 +71,19 @@ def get_polygrp_trains(polygrp: PNG, img: int, rep: int, records: xr.DataArray,
     _duration: float = records.item(0).duration if duration is None else duration
     return ops.filtering.mask_recording(polygrp_trains, _duration, t_start,
                                         relative_times, len(polygrp_trains))
+
+
+def concat_spike_trains(
+    spike_trains1: SpikeTrains, spike_trains2: SpikeTrains, duration: float
+) -> SpikeTrains:
+    """Concatenate two spike train dicts, offsetting the second by `duration`."""
+    common_ids = sorted(set(spike_trains1.keys()) | set(spike_trains2.keys()))
+    spike_trains = {i: np.array([], dtype=float) for i in common_ids}
+    for i, spike_times in spike_trains1.items():
+        spike_trains[i] = spike_times.copy()
+    for i, spike_times in spike_trains2.items():
+        spike_trains[i] = np.concatenate([spike_trains[i], spike_times + duration])
+    return spike_trains
 
 
 def gather_recordings(records: xr.DataArray, img: int, rep: int,

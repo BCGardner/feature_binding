@@ -13,6 +13,7 @@ from .. import measures
 from .base import PNG
 
 __all__ = [
+    "get_metrics_side",
     "get_occurrences_array",
     "get_onsets_array",
     "get_specific_measures",
@@ -21,6 +22,26 @@ __all__ = [
     "f1_score",
     "get_thresholded_metrics",
 ]
+
+
+def get_metrics_side(
+    occ_array: xr.DataArray,
+    labels: pd.DataFrame,
+    target: int = 1,
+    threshold: float = 0.0,
+    precision_min: float | None = 0.5,
+) -> dict[str, pd.DataFrame]:
+    """Get thresholded PNG performance metrics per side.
+
+    Returns:
+        Tabulated metrics containing precision, recall, F1-score per side.
+    """
+    metrics_side = {}
+    for side in labels.drop("image_id", axis=1).columns:
+        metrics_side[side] = get_thresholded_metrics(
+            occ_array, labels, side, target, threshold, precision_min
+        )
+    return metrics_side
 
 
 def get_occurrences_array(polygrps: Sequence[PNG], num_reps: int, num_imgs: int, index: int,

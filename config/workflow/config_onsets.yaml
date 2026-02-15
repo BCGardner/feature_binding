@@ -1,0 +1,19 @@
+expt_dir: null
+trial: null
+chkpt: null
+subdir: null
+delay_jitter: 0
+noise: 0
+verbose: False
+no_action: False
+
+inference:
+  duration: 200.0
+  reps: 10
+  preprompt: 5
+
+detection:
+  duration: 200.0
+  offset: 0.0
+  reps: 10
+  winlen: 20

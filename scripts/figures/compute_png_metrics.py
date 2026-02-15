@@ -25,14 +25,13 @@ from argparse import ArgumentParser, Namespace
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 
 import hsnn.analysis.png.db as polydb
-from hsnn.analysis import png
+from hsnn.analysis.png import stats
 from hsnn.core.logger import get_logger
 from hsnn.utils import handler, io
 
@@ -51,38 +50,6 @@ def load_databases_trials(
     return [db_dict[state] for db_dict in db_dicts]
 
 
-def get_polygrps_from_db(
-    database: polydb.PNGDatabase,
-    layer: int = 4,
-    nrn_ids: Iterable = range(4096),
-    index: int = 1,
-) -> list[png.PNG]:
-    """Get all detected PNGs from database."""
-    polygrps = database.get_pngs(layer, nrn_ids, index)
-    assert isinstance(polygrps, list)
-    return polygrps
-
-
-def get_metrics_side(
-    occ_array: xr.DataArray,
-    labels: pd.DataFrame,
-    target: int = 1,
-    threshold: float = 0.0,
-    precision_min: float | None = 0.5,
-) -> dict[str, pd.DataFrame]:
-    """Get thresholded PNG performance metrics per side.
-
-    Returns:
-        Tabulated metrics containing `precision`, `recall`, `F1-score` per side.
-    """
-    metrics_side = {}
-    for side in labels.drop("image_id", axis=1).columns:
-        metrics_side[side] = png.stats.get_thresholded_metrics(
-            occ_array, labels, side, target, threshold, precision_min
-        )
-    return metrics_side
-
-
 def compute_occurrences_single(args: tuple) -> tuple[int, xr.DataArray | None]:
     """Compute occurrences array for a single trial's PNGs.
 
@@ -95,7 +62,7 @@ def compute_occurrences_single(args: tuple) -> tuple[int, xr.DataArray | None]:
     idx, polygrps, num_reps, num_imgs, index, duration, offset = args
     if len(polygrps) == 0:
         return idx, None
-    occ_array = png.stats.get_occurrences_array(
+    occ_array = stats.get_occurrences_array(
         polygrps, num_reps, num_imgs, index=index, duration=duration, offset=offset
     )
     return idx, occ_array
@@ -188,7 +155,9 @@ def main(opt: Namespace):
     nrn_ids = range(4096)
     polygrps_list = []
     for db in databases:
-        polygrps_list.append(get_polygrps_from_db(db, opt.layer, nrn_ids, opt.index))
+        polygrps_list.append(
+            polydb.get_polygrps(db, layer=opt.layer, nrn_ids=nrn_ids, index=opt.index)
+        )
     logger.info(f"Extracted PNGs from {len(polygrps_list)} databases")
 
     # === Compute occurrences arrays in parallel (CPU-bound) === #
@@ -212,7 +181,7 @@ def main(opt: Namespace):
             logger.warning(f"Trial {i}: No PNGs found")
             trial_scores.append(np.array([]))
             continue
-        metrics = get_metrics_side(
+        metrics = stats.get_metrics_side(
             occ_array, labels, opt.target, opt.threshold, opt.precision_min
         )
         scores = get_sorted_scores(metrics, opt.side)

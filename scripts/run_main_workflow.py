@@ -17,10 +17,10 @@ logger = get_logger(__name__)
 def main(opt: argparse.Namespace):
     logger.info(opt)
     base_cmd = ["snakemake --cores all"]
-    if opt.configfile is not None:
-        base_cmd += [f"--configfile {opt.configfile}"]
     if opt.rule is not None:
         base_cmd += [opt.rule]
+    if opt.configfile is not None:
+        base_cmd += [f"--configfile {opt.configfile}"]
     base_cmd += [
         "--config",
         f"expt_dir={opt.expt_dir}",

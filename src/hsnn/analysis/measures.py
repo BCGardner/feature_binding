@@ -10,26 +10,12 @@ from ._types import CountsArray, RatesArray
 from .base import infer_rates
 
 __all__ = [
-    "as_spike_counts",
     "get_specific_measures",
-    "get_ranked_measures",
     "get_sorted_measures_rates",
+    "get_specific_measures_side",
     "get_filtered_measures",
     "get_combined_measures",
 ]
-
-
-def as_spike_counts(
-    rates: RatesArray, duration: Optional[float] = None, conversion: float = 1e-3
-) -> CountsArray:
-    if duration is None:
-        duration = rates.attrs["duration"]
-    attrs = copy(rates.attrs)
-    attrs.update(unit=None, description="Spike counts")
-    data = np.array(rates * conversion * duration, dtype=int)
-    return xr.DataArray(
-        data, coords=rates.coords, dims=rates.dims, name="counts", attrs=attrs
-    )
 
 
 def get_specific_measures(
@@ -41,7 +27,7 @@ def get_specific_measures(
     _dims = {"rep", "img", pk}
     if set(rates_array.dims) != _dims:
         raise ValueError(f"Input array dims != {_dims}")
-    counts_array = as_spike_counts(rates_array)
+    counts_array = _as_spike_counts(rates_array)
     # Split individual measures according to these target stimuli
     if targets is None:
         targets = counts_array["img"].values
@@ -60,40 +46,6 @@ def get_specific_measures(
         data={target: informs_[:, i] for i, target in enumerate(unique_targets)},
         index=counts_array[pk].values,
     )
-
-
-def get_ranked_measures(
-    rates_array: RatesArray,
-    labels: pd.DataFrame,
-    target: int = 1,
-    bin_width: Optional[int] = None,
-    pk: Hashable = "nrn",
-) -> pd.DataFrame:
-    """Gets the single-entity specific measures, I(s, R), for each label and target category.
-    These measures are then rank-ordered for each label.
-
-    Args:
-        rates_array (RatesArray): Neuronal firing rate responses, dims (rep, img, nrn).
-        labels (pd.DataFrame): Image annotations containing target labels.
-        target (int, optional): Target category for each label. Defaults to 1.
-        bin_width (Optional[int], optional): Spike binning regularisation. Defaults to None.
-        pk (Hashable, optional): Dimension for which specific measures are determined. Defaults to 'nrn'.
-
-    Returns:
-        pd.DataFrame: Rank-ordered specific measures for each label and the target category.
-    """
-    if "image_id" in labels:
-        labels = labels.drop("image_id", axis=1)
-    data = {}
-    for col in labels.columns:
-        targets = np.asarray(labels[col].values)
-        specific_measures = get_specific_measures(
-            rates_array, targets, bin_width, pk=pk
-        )
-        data[col] = specific_measures[target].sort_values(ascending=False).values
-    df = pd.DataFrame(data)
-    df.columns.name = target
-    return df
 
 
 def get_sorted_measures_rates(
@@ -154,6 +106,21 @@ def get_sorted_measures_rates(
         return df_sorted.query("pos > neg")
     else:
         return df_sorted
+
+
+def get_specific_measures_side(
+    rates_array: xr.DataArray,
+    labels: pd.DataFrame,
+    target: int,
+) -> dict[str, pd.DataFrame]:
+    """Get single-neuron specific information per boundary side."""
+    attributes = labels.drop("image_id", axis=1).columns.tolist()
+    measures_sides = {}
+    for attribute in attributes:
+        measures_sides[attribute] = get_sorted_measures_rates(
+            rates_array, labels, attribute, target
+        )
+    return measures_sides
 
 
 def get_filtered_measures(
@@ -236,10 +203,21 @@ def get_combined_measures(
         data=measures_sides,
         index=pd.Index(rates_array["nrn"].values, name="nrn"),
     )
-    specific_measures.columns = pd.Index(
-        specific_measures.columns, name=target
-    )
+    specific_measures.columns = pd.Index(specific_measures.columns, name=target)
     return specific_measures
+
+
+def _as_spike_counts(
+    rates: RatesArray, duration: Optional[float] = None, conversion: float = 1e-3
+) -> CountsArray:
+    if duration is None:
+        duration = rates.attrs["duration"]
+    attrs = copy(rates.attrs)
+    attrs.update(unit=None, description="Spike counts")
+    data = np.array(rates * conversion * duration, dtype=int)
+    return xr.DataArray(
+        data, coords=rates.coords, dims=rates.dims, name="counts", attrs=attrs
+    )
 
 
 def _conditioned_count_freqs(
@@ -305,13 +283,6 @@ def _specific_information(
     )
 
 
-def _mutual_information(
-    pr_responses_cond: npt.ArrayLike, weights: Optional[npt.ArrayLike] = None
-) -> np.float64:
-    results = _specific_information(pr_responses_cond, weights=weights)
-    return np.float64(np.average(results, weights=weights))
-
-
 def _bin_values(values: npt.ArrayLike, bin_size: float) -> npt.NDArray[np.float64]:
     return np.round(np.array(values, dtype=float) / bin_size) * bin_size
 
@@ -325,12 +296,3 @@ def _sum_log_numerical(
     return np.sum(
         probs_cond[mask] * np.log2(probs_cond[mask] / (probs_total[mask] + epsilon))
     )
-
-
-def _stack_arrays(
-    arrays: list[npt.NDArray[np.float64]], max_len: int
-) -> npt.NDArray[np.float64]:
-    stacked_arrays = np.zeros((len(arrays), max_len))
-    for idx, array in enumerate(arrays):
-        stacked_arrays[idx, : len(array)] = array
-    return stacked_arrays
