@@ -17,78 +17,15 @@ import os
 from pathlib import Path
 from time import time
 
-import pandas as pd
 import xarray as xr
 
 from hsnn.utils import io, handler
 from hsnn import analysis, pipeline
-from hsnn.analysis.png import _utils as png_utils
 import hsnn.analysis.png.db as polydb
 from hsnn.simulation import Simulator
 from hsnn.core.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-def compute_hfb_fraction(
-    db_unconstrained: polydb.PNGDatabase,
-    syn_params: pd.DataFrame,
-    layers: list[int] | None = None,
-    position: int = 1,
-    w_min: float = 0.5,
-    tol: float = 3.0,
-) -> dict:
-    """Compute fraction of unconstrained PNGs that are valid HFBs.
-
-    Args:
-        db_unconstrained: Database containing unconstrained PNGs.
-        syn_params: Network synaptic parameters.
-        layers: Layers to analyze (None = all).
-        position: Firing order index used for DB retrieval.
-        w_min: Minimum weight for HFB constraint.
-        tol: Tolerance for delay alignment.
-
-    Returns:
-        Dictionary with per-layer and overall statistics.
-    """
-    layer_ids = sorted(syn_params.index.unique('layer'))
-    if layers is not None:
-        layer_ids = [layer_id for layer_id in layer_ids if layer_id in layers]
-
-    results = {'layers': {}, 'total_unconstrained': 0, 'total_hfb': 0}
-
-    for layer in layer_ids:
-        try:
-            nrn_ids = sorted(syn_params.xs(layer, level='layer').index.unique('post'))
-        except KeyError:
-            continue
-        polygrps = db_unconstrained.get_pngs(layer, nrn_ids, index=position)
-
-        n_unconstrained = len(polygrps)
-        n_hfb = sum(1 for p in polygrps if png_utils.isconstrained(p, syn_params, w_min, tol))
-
-        results['total_unconstrained'] += n_unconstrained
-        results['total_hfb'] += n_hfb
-        results['layers'][layer] = {
-            'unconstrained': n_unconstrained,
-            'hfb': n_hfb,
-            'fraction': n_hfb / n_unconstrained if n_unconstrained > 0 else 0.0
-        }
-
-        if n_unconstrained > 0:
-            frac = n_hfb / n_unconstrained * 100
-            logger.info(f"Layer {layer}: {n_hfb}/{n_unconstrained} = {frac:.1f}% HFB-consistent")
-        else:
-            logger.info(f"Layer {layer}: No PNGs detected")
-
-    if results['total_unconstrained'] > 0:
-        results['overall_fraction'] = results['total_hfb'] / results['total_unconstrained']
-        overall_pct = results['overall_fraction'] * 100
-        logger.info(f"\nOverall: {results['total_hfb']}/{results['total_unconstrained']} = {overall_pct:.1f}% HFB-consistent")
-    else:
-        results['overall_fraction'] = 0.0
-
-    return results
 
 
 def main(opt: Namespace):
@@ -172,18 +109,6 @@ def main(opt: Namespace):
     t_elapsed = time() - t_start
     logger.info(f"Time for detection: {t_elapsed:.1f} s")
 
-    # === Compute HFB fraction === #
-    if opt.compute_fraction:
-        logger.info("\n=== Computing HFB fraction ===")
-        results = compute_hfb_fraction(
-            db, syn_params, layers=opt.layers,
-            w_min=opt.w_min, tol=opt.tol
-        )
-        # Save results
-        results_path = db_path.parent / db_path.name.replace('.db', '_fraction.pkl')
-        io.save_pickle(results, results_path)
-        logger.info(f"Saved fraction results to: '{results_path}'")
-
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Detect unconstrained triplet PNGs.")
@@ -204,14 +129,6 @@ if __name__ == '__main__':
                         help="Window size of SPADE.")
     parser.add_argument('--num_workers', type=int, default=None,
                         help="Number of parallel workers.")
-    parser.add_argument('--w_min', type=float, default=0.5,
-                        help="Minimum weight for HFB constraint check.")
-    parser.add_argument('--tol', type=float, default=3.0,
-                        help="Tolerance for delay alignment check.")
-    parser.add_argument('--compute_fraction', action='store_true', default=True,
-                        help="Compute HFB fraction after detection.")
-    parser.add_argument('--no_compute_fraction', action='store_false', dest='compute_fraction',
-                        help="Skip HFB fraction computation.")
     parser.add_argument('-f', '--force', action='store_true', default=False,
                         help="Overwrite previous results.")
     parser.add_argument('-v', '--verbose', action='store_true', default=False)
