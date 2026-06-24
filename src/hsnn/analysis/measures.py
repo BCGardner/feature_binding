@@ -15,6 +15,7 @@ __all__ = [
     "get_specific_measures_side",
     "get_filtered_measures",
     "get_combined_measures",
+    "summarise_neuron_information",
 ]
 
 
@@ -205,6 +206,102 @@ def get_combined_measures(
     )
     specific_measures.columns = pd.Index(specific_measures.columns, name=target)
     return specific_measures
+
+
+def summarise_neuron_information(
+    records: xr.DataArray,
+    labels: pd.DataFrame,
+    duration: float,
+    offset: float,
+    layer: int,
+    nrn_cls: str = "EXC",
+    info_threshold: float = 2 / 3,
+) -> pd.DataFrame:
+    """Summarises per-neuron stimulus-specific information and preferred label.
+
+    For each neuron in ``layer``, computes the specific information conveyed about
+    convex versus concave at every object side, then assigns:
+
+    * ``pref_side``: the side carrying the most information (argmax across sides);
+    * ``pref_conformation``: the conformation the neuron fires more strongly for at
+      the preferred side (``convex`` or ``concave``);
+    * ``info_bits``: the preferred-side information (bits);
+    * ``informative``: whether ``info_bits`` reaches ``info_threshold`` (default 2/3).
+
+    The information for the firing-preferred conformation is obtained as the
+    element-wise maximum of the convex-target and concave-target measures, since
+    :func:`get_filtered_measures` zeroes the measure for the non-preferred
+    conformation.
+
+    Args:
+        records: Spike recordings (will be sliced to ``layer``/``nrn_cls``).
+        labels: Dataset annotations; one binary column per side plus ``image_id``.
+        duration: Observation period starting from ``offset``.
+        offset: Start of the observation period.
+        layer: Selected layer.
+        nrn_cls: Selected neuron class. Defaults to ``'EXC'``.
+        info_threshold: Information threshold (bits) for the ``informative`` flag.
+
+    Returns:
+        Table indexed by neuron id (``nrn``) with columns ``pref_side``,
+        ``pref_conformation``, ``info_bits`` and ``informative``.
+    """
+    convex = get_combined_measures(
+        records,
+        labels,
+        target=1,
+        duration=duration,
+        offset=offset,
+        layer=layer,
+        nrn_cls=nrn_cls,
+    )
+    concave = get_combined_measures(
+        records,
+        labels,
+        target=0,
+        duration=duration,
+        offset=offset,
+        layer=layer,
+        nrn_cls=nrn_cls,
+    )
+    return _summarise_information(convex, concave, info_threshold)
+
+
+def _summarise_information(
+    convex: pd.DataFrame, concave: pd.DataFrame, info_threshold: float = 2 / 3
+) -> pd.DataFrame:
+    """Derives per-neuron preferred label and informativeness from side measures.
+
+    Args:
+        convex: Per-neuron convex-target information (index ``nrn``, columns = sides).
+        concave: Per-neuron concave-target information, aligned with ``convex``.
+        info_threshold: Information threshold (bits) for the ``informative`` flag.
+
+    Returns:
+        Table indexed by neuron with ``pref_side``, ``pref_conformation``,
+        ``info_bits`` and ``informative``.
+    """
+    sides = np.asarray(convex.columns)
+    convex_vals = convex.values
+    concave_vals = concave.values
+    info = np.maximum(convex_vals, concave_vals)
+    rows = np.arange(info.shape[0])
+    pref_idx = info.argmax(axis=1)
+    info_bits = info[rows, pref_idx]
+    pref_conformation = np.where(
+        convex_vals[rows, pref_idx] >= concave_vals[rows, pref_idx],
+        "convex",
+        "concave",
+    )
+    return pd.DataFrame(
+        {
+            "pref_side": sides[pref_idx],
+            "pref_conformation": pref_conformation,
+            "info_bits": info_bits,
+            "informative": info_bits >= info_threshold,
+        },
+        index=convex.index,
+    )
 
 
 def _as_spike_counts(

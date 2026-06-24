@@ -2,6 +2,7 @@ from typing import Mapping
 from omegaconf import OmegaConf
 from pathlib import Path
 
+import pandas as pd
 import xarray as xr
 
 from .trial import TrialView, CheckpointView
@@ -12,7 +13,8 @@ __all__ = ["ArtifactStore"]
 
 _ARTIFACT_EXT_MAPPING = {
     'results': '.pkl.gz',
-    'config': '.yaml'
+    'config': '.yaml',
+    'table': '.parquet',
 }
 
 
@@ -64,22 +66,70 @@ class ArtifactStore:
         else:
             raise OSError(f"Failed to remove file: {fpath}")
 
-    def load_results(self, subdir: str | None = None, **kwargs) -> xr.DataArray:
+    def load_results(self, subdir: str | None = None,
+                     base_name: str | None = None, **kwargs) -> xr.DataArray:
         ext = _ARTIFACT_EXT_MAPPING['results']
-        fpath = artifacts.get_results_path(
-            self._trial, self._ckpt_idx, subdir=subdir, ext=ext, **kwargs
-        )
+        fpath = self._results_path(subdir, base_name, ext, **kwargs)
         return io.load_pickle(fpath)
 
     def save_results(self, data: xr.DataArray, subdir: str | None = None,
-                     overwrite: bool = False, **kwargs) -> None:
+                     overwrite: bool = False, base_name: str | None = None,
+                     **kwargs) -> None:
         ext = _ARTIFACT_EXT_MAPPING['results']
-        fpath = artifacts.get_results_path(
-            self._trial, self._ckpt_idx, subdir=subdir, ext=ext, **kwargs
-        )
+        fpath = self._results_path(subdir, base_name, ext, **kwargs)
         if not overwrite and fpath.exists():
             raise FileExistsError(f"File already exists: {fpath}")
         return io.save_pickle(data, fpath, parents=True)
+
+    def load_table(self, subdir: str | None = None,
+                   base_name: str | None = None, **kwargs) -> pd.DataFrame:
+        """Loads a tabular artifact persisted as parquet.
+
+        Args:
+            subdir: Sub-directory beneath the checkpoint directory.
+            base_name: Artifact base name (e.g. ``'hfb_annotations'``).
+            **kwargs: Additional name qualifiers forwarded to the path builder.
+
+        Returns:
+            The persisted table.
+        """
+        ext = _ARTIFACT_EXT_MAPPING['table']
+        fpath = self._results_path(subdir, base_name, ext, **kwargs)
+        self._check_path(fpath)
+        return pd.read_parquet(fpath)
+
+    def save_table(self, data: pd.DataFrame, subdir: str | None = None,
+                   overwrite: bool = False, base_name: str | None = None,
+                   **kwargs) -> None:
+        """Persists a tidy table as parquet under the checkpoint directory.
+
+        Mirrors :meth:`save_results` but uses an efficient columnar format for
+        pandas tables. Parent directories are created as required.
+
+        Args:
+            data: Table to persist.
+            subdir: Sub-directory beneath the checkpoint directory (e.g. ``'reuse'``).
+            overwrite: Overwrite an existing artifact rather than raising.
+            base_name: Artifact base name (e.g. ``'hfb_annotations'``).
+            **kwargs: Additional name qualifiers forwarded to the path builder.
+        """
+        ext = _ARTIFACT_EXT_MAPPING['table']
+        fpath = self._results_path(subdir, base_name, ext, **kwargs)
+        if not overwrite and fpath.exists():
+            raise FileExistsError(f"File already exists: {fpath}")
+        fpath.parent.mkdir(parents=True, exist_ok=True)
+        data.to_parquet(fpath)
+
+    def _results_path(self, subdir: str | None, base_name: str | None,
+                      ext: str, **kwargs) -> Path:
+        if base_name is None:
+            return artifacts.get_results_path(
+                self._trial, self._ckpt_idx, subdir=subdir, ext=ext, **kwargs
+            )
+        return artifacts.get_artifact_path(
+            base_name, self._trial, self._ckpt_idx,
+            subdir=subdir, ext=ext, **kwargs
+        )
 
     def load_config(self, subdir: str | None = None) -> dict:
         ext = _ARTIFACT_EXT_MAPPING['config']

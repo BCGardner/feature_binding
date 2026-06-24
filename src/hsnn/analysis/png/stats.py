@@ -21,8 +21,10 @@ __all__ = [
     "precision_recall",
     "f1_score",
     "get_thresholded_metrics",
+    "get_label_metrics",
 ]
 
+_CONFORMATIONS = {1: "convex", 0: "concave"}
 
 def get_metrics_side(
     occ_array: xr.DataArray,
@@ -121,15 +123,15 @@ def precision_recall(
     false_positives = preds_array[:, neg_idxs].sum((0, 1))
     # true_negatives = (~preds_array[:, neg_idxs]).sum((0, 1))
     # Metrics
-    precision = true_positives / (true_positives + false_positives + 1E-16)
-    recall = true_positives / (true_positives + false_negatives)
+    precision = _safe_divide(true_positives, true_positives + false_positives)
+    recall = _safe_divide(true_positives, true_positives + false_negatives)
     return precision, recall
 
 
 def f1_score(
     precision: npt.NDArray[np.float64], recall: npt.NDArray[np.float64]
 ) -> npt.NDArray[np.float64]:
-    return 2 * precision * recall / (precision + recall)
+    return _safe_divide(2 * precision * recall, precision + recall)
 
 
 def get_thresholded_metrics(
@@ -161,6 +163,57 @@ def get_thresholded_metrics(
     return pd.DataFrame(
         data={'precision': precision, 'recall': recall, 'score': scores},
         index=occ_array['png'].values[mask]
+    )
+
+
+def get_label_metrics(
+    occ_array: RatesArray, labels: pd.DataFrame, threshold: float = 0.0
+) -> pd.DataFrame:
+    """Tabulates unfiltered classification metrics for every ``(side, conformation)``.
+
+    Computes precision, recall and F1 for each PNG against every feature label, i.e.
+    each object side combined with each conformation (``convex``/``concave``). No
+    precision filter is applied, so the preferred label can be derived flexibly
+    downstream (e.g. highest F1 among PNGs with precision > 0.5).
+
+    Args:
+        occ_array: Occurrence-rate array with a ``png`` coordinate carrying the
+            desired PNG identifier (e.g. content hash).
+        labels: Image annotations; one binary column per side (1 = convex) plus
+            an ``image_id`` column, which is ignored.
+        threshold: Minimum occurrence rate for a positive prediction. Defaults to 0.0.
+
+    Returns:
+        Long-form table with columns ``png_id``, ``side``, ``conformation``,
+        ``precision``, ``recall`` and ``f1`` (one row per PNG and feature label).
+    """
+    png_ids = occ_array['png'].values
+    sides = labels.drop("image_id", axis=1).columns
+    frames = []
+    for side in sides:
+        for target, conformation in _CONFORMATIONS.items():
+            precision, recall = precision_recall(
+                occ_array, labels, side, target, threshold
+            )
+            frames.append(pd.DataFrame({
+                "png_id": png_ids,
+                "side": side,
+                "conformation": conformation,
+                "precision": precision,
+                "recall": recall,
+                "f1": f1_score(precision, recall),
+            }))
+    return pd.concat(frames, ignore_index=True)
+
+
+def _safe_divide(
+    numerator: npt.NDArray, denominator: npt.NDArray
+) -> npt.NDArray[np.float64]:
+    """Element-wise division, yielding 0.0 where the denominator is 0."""
+    return np.divide(
+        numerator, denominator,
+        out=np.zeros(np.broadcast(numerator, denominator).shape, dtype=np.float64),
+        where=denominator != 0,
     )
 
 
